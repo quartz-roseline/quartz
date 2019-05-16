@@ -1,0 +1,361 @@
+# Add some helper CMake scripts
+LIST(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake")
+
+#################################################################################################
+
+# We need to change a few things to enable compilation
+IF (X86_64)
+	SET(Boost_USE_STATIC_LIBS        OFF)
+	SET(Boost_USE_STATIC_RUNTIME     OFF)
+	SET(Boost_USE_MULTITHREADED      ON)
+	SET(Boost_ALL_DYN_LINK           ON)
+	SET(Boost_NO_SYSTEM_PATHS        ON)
+	SET(BOOST_ROOT       "${CROSS_COMPILE_ROOTFS}/usr")
+	SET(BOOST_INCLUDEDIR "${CROSS_COMPILE_ROOTFS}/usr/include")
+ENDIF (X86_64)
+IF (CROSS_RPI)
+	SET(Boost_USE_STATIC_LIBS        OFF)
+	SET(Boost_USE_STATIC_RUNTIME     OFF)
+	SET(Boost_USE_MULTITHREADED      ON)
+	SET(Boost_ALL_DYN_LINK           ON)
+	SET(Boost_NO_SYSTEM_PATHS        ON)
+	SET(BOOST_ROOT       "${CROSS_COMPILE_ROOTFS}/usr")
+	SET(BOOST_INCLUDEDIR "${CROSS_COMPILE_ROOTFS}/usr/include")
+ENDIF (CROSS_RPI)
+IF (CROSS_BBB)
+	SET(Boost_USE_STATIC_LIBS        OFF)
+	SET(Boost_USE_STATIC_RUNTIME     OFF)
+	SET(Boost_USE_MULTITHREADED      ON)
+	SET(Boost_ALL_DYN_LINK           ON)
+	SET(Boost_NO_SYSTEM_PATHS        ON)
+	SET(BOOST_ROOT       "${CROSS_COMPILE_ROOTFS}/usr")
+	SET(BOOST_INCLUDEDIR "${CROSS_COMPILE_ROOTFS}/usr/include")
+	SET(BOOST_LIBRARYDIR "${CROSS_COMPILE_ROOTFS}/usr/lib")
+ENDIF (CROSS_BBB)
+
+# This is for building with the NATS C Client
+IF (BUILD_NATS_CLIENT)
+	ADD_DEFINITIONS(-DNATS_SERVICE)
+ENDIF (BUILD_NATS_CLIENT)
+
+# This is for building the sync service for priveleged mode operation (required for CLOCK_REALTIME discipline and hardware timestamping)
+IF (BUILD_SYNC_PRIVELEGED)
+	ADD_DEFINITIONS(-DSYNC_PRIVELEGED)
+ENDIF (BUILD_SYNC_PRIVELEGED)
+
+# This is required for boost::log
+ADD_DEFINITIONS(-DBOOST_LOG_DYN_LINK)
+
+#debug symbols -sean
+ADD_DEFINITIONS(-ggdb)
+
+# Preprocessor directive required to link boost trivial logging
+FIND_PACKAGE(Boost REQUIRED
+	COMPONENTS thread system program_options log date_time)
+FIND_PACKAGE(Threads REQUIRED)
+
+# Location of header files for the entire project
+INCLUDE_DIRECTORIES(
+	"${Boost_INCLUDE_DIR}"
+)
+
+# Location of boost libraries
+IF (X86_64)
+	LINK_DIRECTORIES(
+		"${CROSS_COMPILE_ROOTFS}/usr/lib/x86_64-linux-gnu"
+		"${Boost_LIBRARY_DIRS}"
+	)
+ENDIF (X86_64)
+IF (CROSS_RPI)
+	LINK_DIRECTORIES(
+		"${CROSS_COMPILE_ROOTFS}/usr/lib"
+		"${Boost_LIBRARY_DIRS}"
+	)
+ENDIF (CROSS_RPI)
+IF (CROSS_BBB)
+	LINK_DIRECTORIES(
+		"${CROSS_COMPILE_ROOTFS}/usr/lib"
+		"${Boost_LIBRARY_DIRS}"
+	)
+ENDIF (CROSS_BBB)
+
+# This is required for boost::log
+ADD_DEFINITIONS(-DHAVE_ONESTEP_SYNC)
+ADD_DEFINITIONS(-DHAVE_CLOCK_ADJTIME)
+ADD_DEFINITIONS(-D_GNU_SOURCE)
+
+# If building the micro-services QoT Stack
+IF (BUILD_MICROSERVICES)
+	add_definitions(-DQOT_TIMELINE_SERVICE)
+ENDIF (BUILD_MICROSERVICES)
+
+# PTP (based on linuxptp-1.8) library
+ADD_LIBRARY(ptp18 SHARED
+	sync/ptp/linuxptp-1.8/bmc.c
+	sync/ptp/linuxptp-1.8/clock.c
+	sync/ptp/linuxptp-1.8/clockadj.c
+	sync/ptp/linuxptp-1.8/clockcheck.c
+	sync/ptp/linuxptp-1.8/config.c
+	sync/ptp/linuxptp-1.8/fault.c
+	sync/ptp/linuxptp-1.8/filter.c
+	sync/ptp/linuxptp-1.8/fsm.c
+	sync/ptp/linuxptp-1.8/hash.c
+	sync/ptp/linuxptp-1.8/linreg.c
+	sync/ptp/linuxptp-1.8/mave.c
+	sync/ptp/linuxptp-1.8/mmedian.c
+	sync/ptp/linuxptp-1.8/msg.c
+	sync/ptp/linuxptp-1.8/ntpshm.c
+	sync/ptp/linuxptp-1.8/nullf.c
+	sync/ptp/linuxptp-1.8/phc.c
+	sync/ptp/linuxptp-1.8/pi.c
+	sync/ptp/linuxptp-1.8/port.c
+	sync/ptp/linuxptp-1.8/print.c
+	sync/ptp/linuxptp-1.8/raw.c
+	sync/ptp/linuxptp-1.8/rtnl.c
+	sync/ptp/linuxptp-1.8/servo.c
+	sync/ptp/linuxptp-1.8/sk.c
+	sync/ptp/linuxptp-1.8/stats.c
+	sync/ptp/linuxptp-1.8/sysoff.c
+	sync/ptp/linuxptp-1.8/tlv.c
+	sync/ptp/linuxptp-1.8/transport.c
+	sync/ptp/linuxptp-1.8/tsproc.c
+	sync/ptp/linuxptp-1.8/udp.c
+	sync/ptp/linuxptp-1.8/udp6.c
+	sync/ptp/linuxptp-1.8/uds.c
+	sync/ptp/linuxptp-1.8/util.c
+	sync/ptp/linuxptp-1.8/version.c
+	sync/ptp/qot_tlclockops.c
+)
+TARGET_LINK_LIBRARIES(ptp18 m)
+
+#### Helper function to prepend a path to a list of files ####
+FUNCTION(PREPEND var prefix)
+   SET(listVar "")
+   FOREACH(f ${ARGN})
+      LIST(APPEND listVar "${prefix}/${f}")
+   ENDFOREACH(f)
+   SET(${var} "${listVar}" PARENT_SCOPE)
+ENDFUNCTION(PREPEND)
+
+#### Chrony-based NTP Library ####
+SET(CHRONY_HASH_OBJ @CHRONY_HASH_OBJ@)
+SET(CHRONY_OBJ sync/ntp/chrony-3.2/array.c
+			   sync/ntp/chrony-3.2/cmdparse.c
+			   sync/ntp/chrony-3.2/conf.c
+			   sync/ntp/chrony-3.2/local.c
+			   sync/ntp/chrony-3.2/logging.c
+			   sync/ntp/chrony-3.2/memory.c
+			   sync/ntp/chrony-3.2/reference.c
+			   sync/ntp/chrony-3.2/regress.c
+			   sync/ntp/chrony-3.2/rtc.c
+			   sync/ntp/chrony-3.2/sched.c
+			   sync/ntp/chrony-3.2/sources.c
+			   sync/ntp/chrony-3.2/sourcestats.c
+			   sync/ntp/chrony-3.2/stubs.c
+			   sync/ntp/chrony-3.2/smooth.c
+			   sync/ntp/chrony-3.2/sys.c
+			   sync/ntp/chrony-3.2/sys_null.c
+			   sync/ntp/chrony-3.2/tempcomp.c
+			   sync/ntp/chrony-3.2/util.c)
+SET(CHRONY_EXTRA_OBJS @CHRONY_EXTRA_OBJS@)
+
+PREPEND(CHRONY_EXTRA_OBJS_PROCESSED sync/ntp/chrony-3.2/ ${CHRONY_EXTRA_OBJS})
+
+# NTP (based on chrony-3.2) library
+ADD_LIBRARY(ntp18 SHARED
+    ${CHRONY_HASH_OBJ}
+	${CHRONY_OBJ}
+	${CHRONY_EXTRA_OBJS_PROCESSED}
+	sync/ntp/chrony-3.2/client_chronyc.c
+	sync/ntp/chrony-3.2/client_chronyc.h
+	sync/ntp/qot_tlclockops.c
+	sync/ntp/qot_tlclockops.h
+)
+TARGET_LINK_LIBRARIES(ntp18 m)
+
+# Clock Sync parameters JSON serialization lin
+IF (BUILD_NATS_CLIENT)
+	ADD_LIBRARY(qot_clkparams_serialize SHARED
+	    qot_clkparams_serialize.cpp
+	    qot_clkparams_serialize.hpp
+	)
+	TARGET_LINK_LIBRARIES(qot_clkparams_serialize m)
+	INSTALL(
+		TARGETS
+			qot_clkparams_serialize
+		DESTINATION
+			lib
+		COMPONENT
+			libraries
+	)
+ENDIF (BUILD_NATS_CLIENT)
+
+# Library to serialize messages for the clock sync service
+ADD_LIBRARY(qot_syncmsg_serialize SHARED
+	    qot_syncmsg_serialize.cpp
+	    qot_syncmsg_serialize.hpp
+	)
+TARGET_LINK_LIBRARIES(qot_syncmsg_serialize m)
+INSTALL(
+	TARGETS
+		qot_syncmsg_serialize
+	DESTINATION
+		lib
+	COMPONENT
+		libraries
+)
+
+#########################################################################################################
+# QoT Clock Synchronization Daemon
+ADD_EXECUTABLE(qot_sync_service
+	sync/ptp/PTP18.hpp
+	sync/ptp/PTP18.cpp
+	#sync/ptp/PTP.hpp
+	#sync/ptp/PTP.cpp
+	sync/ptp/uncertainty_data.h
+	sync/ntp/NTP18.hpp
+	sync/ntp/NTP18.cpp
+	#sync/ntp/NTP.hpp
+	#sync/ntp/NTP.cpp
+	sync/ntp/uncertainty_data.h
+	sync/Sync.hpp
+	sync/Sync.cpp
+	sync/qot_tlcomm.cpp
+	sync/qot_tlcomm.hpp
+    sync/SyncUncertainty.hpp
+	sync/SyncUncertainty.cpp
+	sync/ProbabilityLib.hpp
+	sync/ProbabilityLib.cpp
+	sync/huygens/PeerTSclient.cpp
+	sync/huygens/PeerTSclient.hpp
+	sync/huygens/PeerTSserver.cpp
+	sync/huygens/PeerTSserver.hpp
+	sync/huygens/Timestamping.cpp
+	sync/huygens/Timestamping.hpp
+	sync/huygens/SVMprocessor.cpp
+	sync/huygens/SVMprocessor.hpp
+	sync/huygens/PeerTSreceiver.cpp
+	sync/huygens/PeerTSreceiver.hpp
+	sync/huygens/CircBuffer.cpp
+	sync/huygens/CircBuffer.hpp
+	sync/huygens/ptp_message.cpp
+	sync/huygens/ptp_message.hpp
+	qot_sync_service.cpp
+	qot_sync_service.hpp)
+IF (BUILD_NATS_CLIENT)
+	TARGET_LINK_LIBRARIES(qot_sync_service svm qot_timeline_serialize qot_syncmsg_serialize ptp18 ntp18 nats qot_clkparams_serialize ${Boost_LIBRARIES} ${CMAKE_THREAD_LIBS_INIT})
+ELSE ()
+	TARGET_LINK_LIBRARIES(qot_sync_service svm qot_timeline_serialize qot_syncmsg_serialize ptp18 ntp18 ${Boost_LIBRARIES} ${CMAKE_THREAD_LIBS_INIT})
+ENDIF (BUILD_NATS_CLIENT)
+
+# LibSVM (https://github.com/cjlin1/libsvm)
+ADD_LIBRARY(svm SHARED 
+	sync/huygens/libsvm/svm.cpp
+	sync/huygens/libsvm/svm.h)
+
+# QoT Peer Daemon
+ADD_EXECUTABLE(qot_peer_service
+	sync/huygens/SVMprocessor.cpp
+	sync/huygens/SVMprocessor.hpp
+	sync/huygens/PeerTSclient.cpp
+	sync/huygens/PeerTSclient.hpp
+	sync/huygens/PeerTSserver.cpp
+	sync/huygens/PeerTSserver.hpp
+	sync/huygens/Timestamping.cpp
+	sync/huygens/Timestamping.hpp
+	sync/huygens/PeerTSreceiver.cpp
+	sync/huygens/PeerTSreceiver.hpp
+	sync/huygens/CircBuffer.cpp
+	sync/huygens/CircBuffer.hpp
+	sync/huygens/ptp_message.cpp
+	sync/huygens/ptp_message.hpp
+	sync/SyncUncertainty.cpp
+	sync/SyncUncertainty.hpp
+	sync/ProbabilityLib.hpp
+	sync/ProbabilityLib.cpp
+	qot_peer_service.cpp)
+target_compile_definitions(qot_peer_service PRIVATE PEER_SERVICE=1)
+IF (BUILD_NATS_CLIENT)
+	TARGET_LINK_LIBRARIES(qot_peer_service svm nats ptp18 qot_clkparams_serialize ${Boost_LIBRARIES} ${CMAKE_THREAD_LIBS_INIT})
+ELSE ()
+	TARGET_LINK_LIBRARIES(qot_peer_service svm ptp18 ${Boost_LIBRARIES} ${CMAKE_THREAD_LIBS_INIT})
+ENDIF (BUILD_NATS_CLIENT)
+
+# PHC2SYS Service
+ADD_EXECUTABLE(phc2sys
+	sync/ptp/linuxptp-1.8/phc2sys.c
+	sync/ptp/linuxptp-1.8/pmc_common.c
+	sync/ptp/linuxptp-1.8/pmc_common.h
+)
+TARGET_LINK_LIBRARIES(phc2sys ptp18 ${CMAKE_THREAD_LIBS_INIT})
+
+# Install the qot peer service to the given prefix
+INSTALL(
+	TARGETS
+		qot_peer_service
+	DESTINATION
+		bin
+	COMPONENT
+		applications
+)
+
+# Install the peer compute service to the given prefix
+INSTALL(
+	FILES
+		sync/huygens/PeerComputeServer.py
+	DESTINATION
+		bin
+	COMPONENT
+		applications
+)
+
+# Install the PTP (linuxptp-1.8) library
+INSTALL(
+	TARGETS
+		ptp18
+	DESTINATION
+		lib
+	COMPONENT
+		libraries
+)
+
+# Install the NTP (chrony-3.2) library
+INSTALL(
+	TARGETS
+		ntp18
+	DESTINATION
+		lib
+	COMPONENT
+		libraries
+)
+
+# Install the LibSVM library library
+INSTALL(
+	TARGETS
+		svm
+	DESTINATION
+		lib
+	COMPONENT
+		libraries
+)
+
+# Install the qot daemon to the given prefix
+INSTALL(
+	TARGETS
+		qot_sync_service
+	DESTINATION
+		bin
+	COMPONENT
+		applications
+)
+
+# Install the phc2sys daemon to the given prefix
+INSTALL(
+	TARGETS
+		phc2sys
+	DESTINATION
+		bin
+	COMPONENT
+		applications
+)
+

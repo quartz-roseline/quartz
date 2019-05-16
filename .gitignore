@@ -1,0 +1,48 @@
+*~
+*.d
+*.o
+*.tmp
+*.swp
+*.swo
+*.dwo
+/*.dtbo
+/hwstamp_ctl
+/phc2sys
+/pmc
+/ptp4l
+build/
+.tmp_versions/
+qot-stack.sublime-project
+qot-stack.sublime-workspace
+*.log
+.DS_Store
+
+# CMake Files
+CMakeCache.txt
+*.cmake
+CMakeFiles/
+
+# Kernel Binaries
+*.ko
+*.cmd
+*.symvers
+*.order
+*.mod.c
+
+#Folders
+*binaries/
+*certificates/
+
+# Chrony
+chronyconf_out.txt
+chronybbbconf_out.txt
+chronybbbcmake_out.txt
+src/micro-services/sync-service/CMakeLists.txt
+src/micro-services/sync-service/sync/ntp/chrony-3.2/config.h
+src/micro-services/sync-service/sync/ntp/chrony-3.2/test/unit/Makefile
+src/micro-services/sync-service/sync/ntp/chrony-3.2/Makefile
+src/micro-services/sync-service/sync/ntp/chrony-3.2/doc/Makefile
+
+# BBB Cross Compile rootfs unzipped
+DockerFiles/dev-image/bbb-rootfs/gcc-linaro-5.4.1-2017.01-x86_64_arm-linux-gnueabihf/
+doc/data/*.csv

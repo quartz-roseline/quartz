@@ -1,0 +1,46 @@
+apiVersion: v1
+kind: Service
+apiVersion: v1
+metadata:
+  name: qot-service
+spec:
+  selector:
+    component: qot
+  ports:
+  - name: client
+    port: 8502
+    targetPort: 8502
+---
+apiVersion: v1
+kind: Pod
+metadata:
+  name: qot-services
+  labels:
+    component: qot
+spec:
+  volumes:
+  - name: shared-sockets
+    hostPath:
+      # directory location on host
+      path: /tmp/qot
+      type: DirectoryOrCreate
+  containers:
+  - name: qot-sync-service
+    image: 192.168.1.102:443/qot-sync-service:arm
+    imagePullPolicy: IfNotPresent
+    volumeMounts:
+    - name: shared-sockets
+      mountPath: /tmp
+  - name: qot-timeline-service
+    image: 192.168.1.102:443/qot-timeline-service:arm
+    imagePullPolicy: IfNotPresent
+    volumeMounts:
+    - name: shared-sockets
+      mountPath: /tmp
+  - name: qot-coord-service
+    image: 192.168.1.102:443/qot-coord-service:arm
+    imagePullPolicy: IfNotPresent
+    ports:
+    - containerPort: 8502
+      name: client
+  

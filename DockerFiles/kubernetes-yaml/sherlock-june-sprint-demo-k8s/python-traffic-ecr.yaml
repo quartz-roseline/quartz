@@ -1,0 +1,20 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  name: qot-appmqtt-python
+spec:
+  volumes:
+  - name: shared-sockets
+    hostPath:
+      # directory location on host
+      path: /tmp/qot
+      type: DirectoryOrCreate
+  containers:
+  - name: qot-traffic-mqtt
+    image: 770301640873.dkr.ecr.us-west-2.amazonaws.com/qot-traffic-mqtt:latest
+    imagePullPolicy: Always
+    #command: ["python", "/usr/local/bin/traffic_mqtt.py"]
+    #args: ["--cacerts", "/ca.crt", "--certfile", "/mqtt-client.crt", "--keyfile", "/mqtt-client.key", "--broker", "mqttserver-svc.default.svc.cluster.local"]
+    volumeMounts:
+    - name: shared-sockets
+      mountPath: /tmp

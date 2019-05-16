@@ -1,0 +1,39 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  name: qot-appbundle
+spec:
+  volumes:
+  - name: shared-sockets
+    hostPath:
+      # directory location on host
+      path: /tmp/qot
+      type: DirectoryOrCreate
+  containers:
+  - name: qot-sync-service
+    image: 770301640873.dkr.ecr.us-west-2.amazonaws.com/qot-sync-service:latest
+    imagePullPolicy: IfNotPresent
+    volumeMounts:
+    - name: shared-sockets
+      mountPath: /tmp
+  - name: qot-timeline-service
+    image: 770301640873.dkr.ecr.us-west-2.amazonaws.com/qot-timeline-service:latest
+    imagePullPolicy: IfNotPresent
+    volumeMounts:
+    - name: shared-sockets
+      mountPath: /tmp
+  - name: qot-coord-service
+    image: 770301640873.dkr.ecr.us-west-2.amazonaws.com/qot-coord-service:latest
+    imagePullPolicy: IfNotPresent
+    ports:
+    - containerPort: 8502
+      name: client
+  - name: qot-helloworld
+    image: 770301640873.dkr.ecr.us-west-2.amazonaws.com/qot-helloworld:latest
+    imagePullPolicy: IfNotPresent
+    volumeMounts:
+    - name: shared-sockets
+      mountPath: /tmp
+  imagePullSecrets:
+  - name: awstest
+  

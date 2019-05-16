@@ -1,0 +1,10 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  name: qot-python-transform
+spec:
+  containers:
+  - name: qot-pytransform
+    image: python-transform:latest
+    imagePullPolicy: Never
+  

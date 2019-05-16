@@ -1,0 +1,19 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  name: qot-app
+spec:
+  volumes:
+  - name: shared-sockets
+    hostPath:
+      # directory location on host
+      path: /tmp/qot
+      type: DirectoryOrCreate
+  containers:
+  - name: qot-helloworld
+    image: qot-helloworld:arm
+    imagePullPolicy: Never
+    volumeMounts:
+    - name: shared-sockets
+      mountPath: /tmp
+  

@@ -1,0 +1,36 @@
+apiVersion: v1
+kind: Service
+apiVersion: v1
+metadata:
+  name: simple-zk
+spec:
+  type: NodePort
+  selector:
+    component: simple-zk
+  ports:
+  - name: client
+    port: 2181
+  - name: follower
+    port: 2888
+  - name: election
+    port: 3888
+---
+apiVersion: v1
+kind: Pod
+metadata:
+  name: zookeeper
+  labels:
+    component: simple-zk
+spec:
+  containers:
+  - name: zookeeper-node
+    image: zookeeper:latest
+    imagePullPolicy: IfNotPresent
+    ports:
+    - containerPort: 2181
+      name: client
+    - containerPort: 2888
+      name: follower
+    - containerPort: 3888
+      name: election
+  

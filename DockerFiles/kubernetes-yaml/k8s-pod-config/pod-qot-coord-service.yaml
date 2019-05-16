@@ -1,0 +1,28 @@
+apiVersion: v1
+kind: Service
+apiVersion: v1
+metadata:
+  name: qot-coord-service
+spec:
+  type: NodePort
+  selector:
+    component: qot-coord-service
+  ports:
+  - name: client
+    port: 8502
+---
+apiVersion: v1
+kind: Pod
+metadata:
+  name: coord-service
+  labels:
+    component: qot-coord-service
+spec:
+  containers:
+  - name: qot-coord-service
+    image: qot-coord-service:latest
+    imagePullPolicy: Never
+    ports:
+    - containerPort: 8502
+      name: client
+  
