@@ -276,4 +276,4 @@ To run a demo on the Beaglebone Black, once the containers are built, a demo can
 
 # Support #
 
-[//]: <> (Questions can be directed to Anon D'Anon (sandeepd@andrew.cmu.edu))
+[//]: <> (Questions can be directed to Anon D'Anon)
